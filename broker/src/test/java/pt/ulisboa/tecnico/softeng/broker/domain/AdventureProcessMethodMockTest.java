@@ -1,5 +1,8 @@
 package pt.ulisboa.tecnico.softeng.broker.domain;
 
+import static org.junit.Assert.assertNull;
+import org.junit.Assert.*;
+
 import org.joda.time.LocalDate;
 import org.junit.After;
 import org.junit.Assert;
@@ -7,9 +10,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import junit.framework.AssertionFailedError;
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.integration.junit4.JMockit;
+import pt.ulisboa.tecnico.softeng.bank.exception.BankException;
 import pt.ulisboa.tecnico.softeng.broker.interfaces.ActivityInterface;
 import pt.ulisboa.tecnico.softeng.broker.interfaces.BankInterface;
 import pt.ulisboa.tecnico.softeng.broker.interfaces.HotelInterface;
@@ -56,6 +61,25 @@ public class AdventureProcessMethodMockTest {
 		Assert.assertEquals(HOTEL_REFERENCE, adventure.getRoomBooking());
 		Assert.assertEquals(ACTIVITY_REFERENCE, adventure.getActivityBooking());
 	}
+
+	@Test
+	public void processWithBankException(@Mocked final BankInterface bankInterface){
+		new Expectations() {{
+			BankInterface.processPayment(IBAN, 300);
+			this.result = new BankException();
+		}};
+
+		Adventure adventure = new Adventure(this.broker, this.begin, this.end, 20, IBAN, 300); 
+		
+		try {
+			adventure.process();
+			Assert.fail();
+		}catch(BankException e) {
+			Assert.assertNull(adventure.getBankPayment());
+		}
+
+	}
+
 
 	@After
 	public void tearDown() {
